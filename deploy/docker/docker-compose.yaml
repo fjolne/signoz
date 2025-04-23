@@ -4,9 +4,9 @@ x-common: &common
     - signoz-net
   restart: unless-stopped
   logging:
+    driver: journald
     options:
-      max-size: 50m
-      max-file: "3"
+      tag: "{{.Name}}"
 x-clickhouse-defaults: &clickhouse-defaults
   !!merge <<: *common
   # addding non LTS version due to this fix https://github.com/ClickHouse/ClickHouse/commit/32caf8716352f45c1b617274c7508c86b7d1afab
@@ -117,7 +117,8 @@ services:
       - --use-logs-new-schema=true
       - --use-trace-new-schema=true
     ports:
-      - "8080:8080" # signoz port
+      - "127.0.0.1:8080:8080" # signoz port on localhost
+      - "100.82.192.31:8080:8080" # signoz port on specific IP
     #   - "6060:6060"     # pprof port
     volumes:
       - ../common/signoz/prometheus.yml:/root/config/prometheus.yml
@@ -130,7 +131,7 @@ services:
       - DASHBOARDS_PATH=/root/config/dashboards
       - STORAGE=clickhouse
       - GODEBUG=netdns=go
-      - TELEMETRY_ENABLED=true
+      - TELEMETRY_ENABLED=false
       - DEPLOYMENT_TYPE=docker-standalone-amd
     healthcheck:
       test:
@@ -159,8 +160,10 @@ services:
       - LOW_CARDINAL_EXCEPTION_GROUPING=false
     ports:
       # - "1777:1777"     # pprof extension
-      - "4317:4317" # OTLP gRPC receiver
-      - "4318:4318" # OTLP HTTP receiver
+      - "127.0.0.1:4317:4317" # OTLP gRPC receiver on localhost
+      - "127.0.0.1:4318:4318" # OTLP HTTP receiver on localhost
+      - "100.82.192.31:4317:4317" # OTLP gRPC receiver on specific IP
+      - "100.82.192.31:4318:4318" # OTLP HTTP receiver on specific IP
     depends_on:
       signoz:
         condition: service_healthy
